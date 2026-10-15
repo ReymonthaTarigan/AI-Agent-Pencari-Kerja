@@ -1,0 +1,3 @@
+# Simpan semua file teks dengan akhir baris LF di repo; Git menyesuaikan saat checkout di Windows.
+* text=auto eol=lf
+*.db binary

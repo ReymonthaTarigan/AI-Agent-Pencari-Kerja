@@ -1,0 +1,36 @@
+# ===== Rahasia dan data pribadi: jangan pernah masuk repo =====
+.env
+.env.*
+!.env.example
+secrets/
+data/
+
+# Lapisan cadangan, bila file rahasia tersimpan di luar folder secrets/
+*.enc
+client_secret*.json
+token*.json
+credentials*.json
+
+# ===== Python =====
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+build/
+dist/
+
+# ===== Database dan log =====
+*.db
+*.sqlite
+*.sqlite3
+*.log
+
+# ===== Editor dan sistem operasi =====
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+desktop.ini

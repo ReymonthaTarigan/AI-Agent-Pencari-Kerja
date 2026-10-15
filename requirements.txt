@@ -1,0 +1,23 @@
+# Bot Telegram
+python-telegram-bot>=21.0,<23
+
+# Satu antarmuka untuk banyak penyedia LLM
+litellm>=1.50
+
+# Validasi data dan output LLM
+pydantic>=2.7,<3
+
+# Membaca file .env
+python-dotenv>=1.0
+
+# Google API (Gmail, Calendar, Drive, Docs, Sheets)
+google-api-python-client>=2.130
+google-auth>=2.29
+google-auth-oauthlib>=1.2
+
+# Enkripsi token Google di disk
+cryptography>=42
+
+# Data zona waktu (wajib di Windows untuk Asia/Jakarta)
+tzdata>=2024.1
+

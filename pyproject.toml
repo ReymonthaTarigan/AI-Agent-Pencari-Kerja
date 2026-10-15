@@ -1,0 +1,19 @@
+[project]
+name = "agent-cari-kerja"
+version = "0.1.0"
+description = "Agent pribadi untuk menilai lowongan, menyiapkan lamaran berbasis bukti, dan mengelola jadwal interview lewat Telegram dan Google."
+readme = "README.md"
+requires-python = ">=3.11"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+
+[tool.ruff]
+line-length = 120
+target-version = "py311"
+
+[tool.ruff.lint]
+# E/W: gaya dasar, F: error nyata (nama tak dikenal, import tak terpakai), I: urutan import,
+# B: pola rawan bug, UP: sintaks Python modern, SIM: penyederhanaan, RUF: aturan tambahan ruff
+select = ["E", "W", "F", "I", "B", "UP", "SIM", "RUF"]

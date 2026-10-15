@@ -1,0 +1,173 @@
+{
+  "_petunjuk": "SEMUA ISI FILE INI ADALAH DATA DUMMY. Salin ke data/profil.json (folder data/ tidak masuk repo), ganti dengan data aslimu, lalu ubah PROFIL_PATH di .env. Aturan: setiap skill harus muncul di kolom 'skill' minimal satu item; setiap item idealnya punya 'bukti_angka' (pernyataan faktual yang bisa kamu pertanggungjawabkan saat interview) atau 'link'. Format tanggal YYYY-MM; 'selesai' null bila masih berjalan. Nilai 'jenis' yang diizinkan: pendidikan, pengalaman_kerja, magang, proyek_magang, proyek_kuliah, proyek_pribadi, organisasi, sertifikat, pencapaian.",
+
+  "identitas": {
+    "nama": "Nama Dummy",
+    "email": "nama.dummy@contoh.com",
+    "telepon": "+62 812-0000-0000",
+    "kota": "Bandung",
+    "linkedin": "https://www.linkedin.com/in/nama-dummy",
+    "github": "https://github.com/nama-dummy",
+    "portofolio": null
+  },
+
+  "skill": [
+    {"id": "S-01", "nama": "Python", "alias": ["python3"], "level": "mahir"},
+    {"id": "S-02", "nama": "SQL", "alias": ["mysql", "postgresql", "bigquery"], "level": "menengah"},
+    {"id": "S-03", "nama": "Looker Studio", "alias": ["google data studio"], "level": "menengah"},
+    {"id": "S-04", "nama": "Excel", "alias": ["spreadsheet", "google sheets"], "level": "mahir"},
+    {"id": "S-05", "nama": "Pandas", "alias": [], "level": "menengah"},
+    {"id": "S-06", "nama": "LLM dan RAG", "alias": ["rag", "langchain", "large language model"], "level": "menengah"},
+    {"id": "S-07", "nama": "Machine learning", "alias": ["scikit-learn", "ml"], "level": "dasar"},
+    {"id": "S-08", "nama": "Web scraping", "alias": ["beautifulsoup", "scraping"], "level": "menengah"},
+    {"id": "S-09", "nama": "Statistika", "alias": ["analisis statistik"], "level": "menengah"},
+    {"id": "S-10", "nama": "Presentasi data", "alias": ["storytelling data", "komunikasi"], "level": "menengah"}
+  ],
+
+  "item": [
+    {
+      "id": "P-01",
+      "jenis": "pendidikan",
+      "judul": "S1 Teknik Informatika",
+      "organisasi": "Universitas Contoh",
+      "mulai": "2022-08",
+      "selesai": null,
+      "deskripsi": "Fokus pada analisis data dan kecerdasan buatan. Mata kuliah relevan: basis data, statistika, pembelajaran mesin.",
+      "bukti_angka": ["IPK 3,60 dari 4,00 sampai semester 7"],
+      "link": null,
+      "skill": ["S-09"]
+    },
+    {
+      "id": "P-02",
+      "jenis": "magang",
+      "judul": "Magang Data Analyst",
+      "organisasi": "PT Contoh Nusantara",
+      "mulai": "2026-07",
+      "selesai": null,
+      "deskripsi": "Membantu tim penjualan menyiapkan laporan rutin, membersihkan data transaksi, dan membuat dashboard untuk manajer cabang.",
+      "bukti_angka": ["Menangani data transaksi dari 12 cabang"],
+      "link": null,
+      "skill": ["S-02", "S-04"]
+    },
+    {
+      "id": "P-03",
+      "jenis": "proyek_magang",
+      "judul": "Dashboard penjualan mingguan di Looker Studio",
+      "organisasi": "PT Contoh Nusantara",
+      "mulai": "2026-08",
+      "selesai": "2026-09",
+      "deskripsi": "Membangun dashboard penjualan yang terhubung ke tabel SQL, menggantikan laporan Excel yang sebelumnya disusun manual setiap minggu.",
+      "bukti_angka": ["Dipakai oleh 3 manajer", "Waktu menyusun laporan mingguan turun dari 4 jam menjadi 30 menit"],
+      "link": null,
+      "skill": ["S-02", "S-03", "S-10"]
+    },
+    {
+      "id": "P-04",
+      "jenis": "proyek_magang",
+      "judul": "Otomasi rekap file cabang dengan Python",
+      "organisasi": "PT Contoh Nusantara",
+      "mulai": "2026-09",
+      "selesai": "2026-09",
+      "deskripsi": "Menulis skrip Python dan Pandas yang menggabungkan file Excel dari tiap cabang, memeriksa format, dan menghasilkan satu file rekap.",
+      "bukti_angka": ["Menggabungkan 12 file cabang", "Waktu rekap turun dari 2 jam menjadi 5 menit"],
+      "link": null,
+      "skill": ["S-01", "S-04", "S-05"]
+    },
+    {
+      "id": "P-05",
+      "jenis": "proyek_kuliah",
+      "judul": "Chatbot RAG untuk dokumen akademik",
+      "organisasi": "Universitas Contoh",
+      "mulai": "2026-02",
+      "selesai": "2026-06",
+      "deskripsi": "Membangun chatbot tanya jawab atas dokumen panduan akademik dengan retrieval, reranking, dan evaluasi menggunakan RAGAS.",
+      "bukti_angka": ["Skor faithfulness 0,82 pada 50 pertanyaan uji", "Mengindeks 40 dokumen PDF"],
+      "link": "https://github.com/nama-dummy/chatbot-rag",
+      "skill": ["S-01", "S-06"]
+    },
+    {
+      "id": "P-06",
+      "jenis": "proyek_kuliah",
+      "judul": "Klasifikasi sentimen ulasan aplikasi",
+      "organisasi": "Universitas Contoh",
+      "mulai": "2025-09",
+      "selesai": "2025-12",
+      "deskripsi": "Melatih dan membandingkan beberapa model klasifikasi sentimen untuk ulasan aplikasi berbahasa Indonesia.",
+      "bukti_angka": ["Akurasi 87% pada 5.000 ulasan", "Membandingkan 3 model"],
+      "link": "https://github.com/nama-dummy/sentimen-ulasan",
+      "skill": ["S-01", "S-05", "S-07"]
+    },
+    {
+      "id": "P-07",
+      "jenis": "proyek_kuliah",
+      "judul": "Analisis harga properti dari data hasil scraping",
+      "organisasi": "Universitas Contoh",
+      "mulai": "2025-03",
+      "selesai": "2025-05",
+      "deskripsi": "Mengumpulkan data listing properti dari situs yang mengizinkan, membersihkannya, lalu menganalisis faktor yang memengaruhi harga.",
+      "bukti_angka": ["Mengumpulkan 3.000 listing"],
+      "link": null,
+      "skill": ["S-01", "S-05", "S-08", "S-09"]
+    },
+    {
+      "id": "P-08",
+      "jenis": "proyek_pribadi",
+      "judul": "Agent asisten cari kerja",
+      "organisasi": null,
+      "mulai": "2026-10",
+      "selesai": null,
+      "deskripsi": "Agent pribadi yang menilai lowongan, menyiapkan paket lamaran dengan validasi bukti, dan mengelola jadwal interview lewat Telegram dan Google.",
+      "bukti_angka": [],
+      "link": "https://github.com/nama-dummy/agent-cari-kerja",
+      "skill": ["S-01", "S-06"]
+    },
+    {
+      "id": "P-09",
+      "jenis": "organisasi",
+      "judul": "Staf divisi riset himpunan mahasiswa",
+      "organisasi": "Himpunan Mahasiswa Contoh",
+      "mulai": "2023-09",
+      "selesai": "2024-08",
+      "deskripsi": "Merancang dan mengolah survei kepuasan mahasiswa, lalu mempresentasikan hasilnya kepada pengurus jurusan.",
+      "bukti_angka": ["Mengolah survei dengan 300 responden"],
+      "link": null,
+      "skill": ["S-09", "S-10"]
+    },
+    {
+      "id": "P-10",
+      "jenis": "sertifikat",
+      "judul": "Sertifikat analisis data (contoh)",
+      "organisasi": "Lembaga Kursus Contoh",
+      "mulai": "2025-01",
+      "selesai": "2025-03",
+      "deskripsi": "Kursus daring analisis data yang mencakup SQL, spreadsheet, dan visualisasi data.",
+      "bukti_angka": [],
+      "link": "https://contoh.com/sertifikat/12345",
+      "skill": ["S-02", "S-04"]
+    },
+    {
+      "id": "P-11",
+      "jenis": "pencapaian",
+      "judul": "Finalis lomba data science tingkat nasional (contoh)",
+      "organisasi": "Penyelenggara Lomba Contoh",
+      "mulai": "2025-10",
+      "selesai": "2025-11",
+      "deskripsi": "Bersama tim tiga orang membangun model prediksi churn pelanggan dan mempresentasikannya di babak final.",
+      "bukti_angka": ["Peringkat 5 dari 120 tim"],
+      "link": null,
+      "skill": ["S-07", "S-10"]
+    },
+    {
+      "id": "P-12",
+      "jenis": "organisasi",
+      "judul": "Panitia seminar teknologi",
+      "organisasi": "Himpunan Mahasiswa Contoh",
+      "mulai": "2024-03",
+      "selesai": "2024-04",
+      "deskripsi": "Menjadi koordinator acara untuk seminar teknologi tahunan jurusan.",
+      "bukti_angka": [],
+      "link": null,
+      "skill": ["S-10"]
+    }
+  ]
+}

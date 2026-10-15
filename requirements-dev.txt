@@ -1,0 +1,8 @@
+# Kebutuhan aplikasi + alat pengembangan
+-r requirements.txt
+
+# Unit test
+pytest>=8
+
+# Linter dan formatter
+ruff>=0.6
