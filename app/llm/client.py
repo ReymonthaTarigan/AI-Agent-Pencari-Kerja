@@ -15,7 +15,7 @@ import json
 import re
 import sqlite3
 import time
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from pathlib import Path
 from typing import Literal, TypeVar
 
@@ -183,26 +183,37 @@ class LLMClient:
         versi_prompt: str | None = None,
         maks_ulang: int = 1,
         prioritas: Prioritas = "normal",
+        validasi: Callable[[T], list[str]] | None = None,
     ) -> T:
-        """Panggil LLM dan kembalikan objek yang sudah lolos validasi schema."""
+        """Panggil LLM dan kembalikan objek yang sudah lolos validasi.
+
+        Validasi dua lapis: format diperiksa schema Pydantic, lalu isi diperiksa fungsi `validasi` (opsional),
+        yang mengembalikan daftar masalah. Bila ada masalah, LLM diberi tahu dan diminta mengulang.
+        """
         pesan = list(messages)
         for percobaan in range(maks_ulang + 1):
             teks, _ = self.panggil(tugas, pesan, versi_prompt=versi_prompt, json_mode=True, prioritas=prioritas)
             try:
-                return schema.model_validate_json(bersihkan_json(teks))
+                hasil = schema.model_validate_json(bersihkan_json(teks))
             except (ValidationError, json.JSONDecodeError) as e:
-                if percobaan == maks_ulang:
-                    raise OutputTidakValid(f"Output tidak sesuai schema {schema.__name__}: {e}") from e
-                pesan = [
-                    *pesan,
-                    {"role": "assistant", "content": teks},
-                    {
-                        "role": "user",
-                        "content": (
-                            "Output sebelumnya tidak sesuai format. Kesalahan:\n"
-                            f"{str(e)[:1500]}\n"
-                            "Kirim ulang HANYA objek JSON yang valid sesuai format yang diminta."
-                        ),
-                    },
-                ]
+                kesalahan = str(e)
+            else:
+                masalah = validasi(hasil) if validasi else []
+                if not masalah:
+                    return hasil
+                kesalahan = "\n".join(f"- {m}" for m in masalah)
+            if percobaan == maks_ulang:
+                raise OutputTidakValid(f"Output {schema.__name__} tidak valid: {ringkas_error(Exception(kesalahan))}")
+            pesan = [
+                *pesan,
+                {"role": "assistant", "content": teks},
+                {
+                    "role": "user",
+                    "content": (
+                        "Output sebelumnya tidak valid. Kesalahan:\n"
+                        f"{kesalahan[:1500]}\n"
+                        "Perbaiki lalu kirim ulang HANYA objek JSON yang valid sesuai format yang diminta."
+                    ),
+                },
+            ]
         raise AssertionError("tidak terjangkau")

@@ -1,7 +1,8 @@
 -- Skema database agent asisten cari kerja.
 -- SQLite adalah sumber kebenaran; Google Sheets hanya tampilan.
 -- Waktu disimpan dalam UTC, format ISO 8601 (datetime('now')).
--- Aman dijalankan berulang kali (IF NOT EXISTS).
+-- Aman dijalankan berulang kali (IF NOT EXISTS). Perubahan pada tabel yang sudah ada ditangani
+-- migrasi di app/db/repo.py, dengan nomor versi di PRAGMA user_version.
 
 PRAGMA foreign_keys = ON;
 
@@ -56,10 +57,14 @@ CREATE TABLE IF NOT EXISTS lowongan (
 CREATE TABLE IF NOT EXISTS requirement (
     id                 INTEGER PRIMARY KEY AUTOINCREMENT,
     lowongan_id        INTEGER NOT NULL REFERENCES lowongan(id) ON DELETE CASCADE,
+    no                 INTEGER NOT NULL,            -- urutan dalam lowongan, dipakai saat pencocokan
     teks_asli          TEXT NOT NULL,
     kategori           TEXT NOT NULL CHECK (kategori IN ('wajib', 'tambahan')),
-    skill_normal       TEXT,
-    tahun_pengalaman   REAL
+    jenis              TEXT NOT NULL CHECK (jenis IN (
+                           'skill', 'pengalaman', 'pendidikan', 'bahasa', 'sertifikasi', 'lainnya')),
+    skill              TEXT NOT NULL DEFAULT '[]',  -- JSON array; lebih dari satu berarti cukup salah satu
+    tahun_pengalaman   REAL,
+    UNIQUE (lowongan_id, no)
 );
 
 CREATE TABLE IF NOT EXISTS kecocokan (
@@ -67,6 +72,7 @@ CREATE TABLE IF NOT EXISTS kecocokan (
     requirement_id   INTEGER NOT NULL REFERENCES requirement(id) ON DELETE CASCADE,
     status           TEXT NOT NULL CHECK (status IN ('terpenuhi', 'sebagian', 'tidak')),
     bukti_item_ids   TEXT NOT NULL DEFAULT '[]',   -- JSON array id profil_item
+    alasan           TEXT,
     dinilai_pada     TEXT NOT NULL DEFAULT (datetime('now')),
     PRIMARY KEY (lowongan_id, requirement_id)
 );

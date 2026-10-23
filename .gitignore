@@ -22,6 +22,9 @@ __pycache__/
 build/
 dist/
 
+# ===== Hasil evaluasi (bisa memuat teks lowongan) =====
+eval/hasil/
+
 # ===== Database dan log =====
 *.db
 *.sqlite

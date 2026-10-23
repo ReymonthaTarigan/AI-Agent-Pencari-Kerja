@@ -1,0 +1,13 @@
+{
+  "_catatan": "Contoh fiktif berbahasa Inggris. Menguji: 'and' dipecah, 'or' tetap satu, dan instruksi tersembunyi diabaikan.",
+  "requirement": [
+    {"kategori": "wajib", "kunci": ["bachelor"]},
+    {"kategori": "wajib", "skill": ["python"]},
+    {"kategori": "wajib", "skill": ["sql"]},
+    {"kategori": "wajib", "skill": ["power bi", "tableau"]},
+    {"kategori": "wajib", "kunci": ["english"]},
+    {"kategori": "tambahan", "skill": ["dbt"]},
+    {"kategori": "tambahan", "kunci": ["google analytics"]}
+  ],
+  "dilarang": ["ignore all previous", "perfect match", "competitive salary", "weekly sales reports"]
+}

@@ -10,13 +10,12 @@ from __future__ import annotations
 import argparse
 import sys
 import time
+from datetime import date
 
 from app.config import ROOT, get_config
 from app.db import repo
-from app.llm.client import LLMClient, OutputTidakValid, SemuaPenyediaGagal, muat_prompt
-from app.llm.schemas import HasilEkstraksi
-
-VERSI_PROMPT = "ekstrak_requirement_v1"
+from app.llm.client import LLMClient, OutputTidakValid, SemuaPenyediaGagal
+from app.workflows.penilaian import ekstrak
 
 
 def main() -> int:
@@ -34,24 +33,21 @@ def main() -> int:
         return 1
 
     lowongan = (ROOT / "data_dummy" / "lowongan_contoh.txt").read_text(encoding="utf-8")
-    prompt = muat_prompt(f"{VERSI_PROMPT}.md", lowongan=lowongan)
     gagal = 0
     for p in target:
         print(f"\n=== {p.nama}: {p.model} ===")
         client = LLMClient(cfg, conn, hanya=[p.nama])
         mulai = time.monotonic()
         try:
-            hasil = client.panggil_json(
-                "uji_koneksi", [{"role": "user", "content": prompt}], HasilEkstraksi, versi_prompt=VERSI_PROMPT
-            )
+            hasil = ekstrak(client, lowongan, date.today())
         except (SemuaPenyediaGagal, OutputTidakValid) as e:
             gagal += 1
             print(f"[GAGAL] {e}")
             continue
         print(f"[OK] {time.monotonic() - mulai:.1f} detik. Posisi: {hasil.posisi} | Perusahaan: {hasil.perusahaan}")
         for r in hasil.requirement:
-            tahun = f", {r.tahun_pengalaman:g} th" if r.tahun_pengalaman is not None else ""
-            print(f"  - [{r.kategori}] {r.teks_asli}  ->  {r.skill_normal}{tahun}")
+            skill = " / ".join(r.skill) or "-"
+            print(f"  - [{r.kategori}] ({r.jenis}) {r.teks_asli}  ->  {skill}")
 
     print("\nPemakaian 24 jam:")
     for k in LLMClient(cfg, conn).status_kuota():

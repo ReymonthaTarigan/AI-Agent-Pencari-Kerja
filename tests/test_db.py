@@ -49,3 +49,29 @@ def test_hitung_request_hanya_24_jam_terakhir(conn):
     repo.catat_llm(conn, tugas="t", penyedia="cadangan", model="m", sukses=False)
     assert repo.hitung_request_24jam(conn, "utama") == 3
     assert repo.hitung_request_24jam(conn, "cadangan") == 1
+
+
+SKEMA_TAHAP_0 = """
+CREATE TABLE lowongan (id INTEGER PRIMARY KEY, posisi TEXT);
+CREATE TABLE requirement (id INTEGER PRIMARY KEY, lowongan_id INTEGER, teks_asli TEXT, kategori TEXT,
+                          skill_normal TEXT, tahun_pengalaman REAL);
+CREATE TABLE kecocokan (lowongan_id INTEGER, requirement_id INTEGER, status TEXT, bukti_item_ids TEXT);
+"""
+
+
+def test_migrasi_database_tahap_0():
+    c = repo.connect(":memory:")
+    c.executescript(SKEMA_TAHAP_0)
+    repo.init_db(c)
+    kolom = {r[1] for r in c.execute("PRAGMA table_info(requirement)")}
+    assert {"skill", "jenis", "no"} <= kolom and "skill_normal" not in kolom
+    assert c.execute("PRAGMA user_version").fetchone()[0] == repo.VERSI_SKEMA
+    repo.init_db(c)  # aman dijalankan lagi
+
+
+def test_migrasi_berhenti_bila_ada_data_lama():
+    c = repo.connect(":memory:")
+    c.executescript(SKEMA_TAHAP_0)
+    c.execute("INSERT INTO requirement (teks_asli, kategori, skill_normal) VALUES ('SQL', 'wajib', 'sql')")
+    with pytest.raises(RuntimeError, match="Migrasi database dibatalkan"):
+        repo.init_db(c)

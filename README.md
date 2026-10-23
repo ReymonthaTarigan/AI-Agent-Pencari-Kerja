@@ -8,15 +8,15 @@ Google Calendar, Drive, dan Sheets.
 Prinsip utamanya: **LLM hanya mengusulkan, kode yang memutuskan.** Validasi, perhitungan, dan setiap tindakan
 yang keluar ke pihak lain dijaga oleh kode. Tidak ada email atau lamaran yang terkirim tanpa persetujuan pemilik.
 
-> **Status:** Tahap 0 selesai. Fondasinya sudah berjalan: bot Telegram khusus pemilik, klien LLM dengan
-> penyedia cadangan dan pengendali kuota, koneksi Google dengan izin sempit, serta profil berbasis bukti.
+> **Status:** Tahap 1 sedang berjalan. Teks lowongan yang ditempel ke bot Telegram dinilai terhadap profil:
+> setiap requirement diberi status dan id bukti, skor dihitung oleh kode, dan hasilnya masuk tracker Sheets.
 
 ## Roadmap
 
 | Tahap | Isi | Status |
 | --- | --- | --- |
 | 0 | Fondasi: bot Telegram, klien LLM, koneksi Google, profil dan database | Selesai |
-| 1 | Penilaian lowongan: ekstraksi requirement, pencocokan dengan profil, skor, tracker Sheets | Berikutnya |
+| 1 | Penilaian lowongan: ekstraksi requirement, pencocokan dengan profil, skor, tracker Sheets | Sedang berjalan |
 | 2 | Paket lamaran: CV dan cover letter yang divalidasi terhadap bukti di profil | Direncanakan |
 | 3 | Persetujuan lewat Telegram, deteksi email rekruter, jadwal interview otomatis | Direncanakan |
 | 4 | Persiapan dan simulasi interview, follow-up, laporan strategi mingguan | Direncanakan |
@@ -38,8 +38,18 @@ flowchart TB
     T --> G[Google API<br/>Gmail, Calendar, Drive, Sheets]
 ```
 
-Diagram di atas adalah rancangan lengkapnya. Yang sudah ada di Tahap 0: bot Telegram, lapisan LLM, database,
-dan koneksi Google. Penjadwal, workflow, dan tools dibangun mulai Tahap 1.
+Diagram di atas adalah rancangan lengkapnya. Yang sudah ada: bot Telegram, lapisan LLM, database, koneksi Google,
+dan workflow penilaian lowongan. Penjadwal dan tools untuk loop agent menyusul di tahap berikutnya.
+
+Alur penilaian lowongan:
+
+1. **Kode** menghitung hash teks. Lowongan yang sudah pernah dinilai langsung dijawab dari database.
+2. **LLM** mengekstrak requirement. Daftar "A, B, atau C" menjadi satu requirement dengan skill alternatif.
+3. **LLM** menilai setiap requirement terhadap profil dan menunjuk id item profil sebagai bukti.
+4. **Kode** menolak id bukti yang tidak ada di profil, menurunkan status yang tidak punya bukti, lalu menghitung skor:
+   requirement wajib berbobot 2, tambahan 1; terpenuhi bernilai 1, sebagian 0,5. Skor 70 ke atas berarti layak
+   dilamar, 50 sampai 69 pertimbangkan.
+5. **Kode** menyimpan semuanya dalam satu transaksi dan menulis ulang tab Lamaran di Sheets.
 
 Pembagian kerja antara LLM dan kode:
 
@@ -58,10 +68,16 @@ Pembagian kerja antara LLM dan kode:
 | Tetap jalan saat penyedia gagal | Otomatis pindah: utama, cadangan, lalu penyedia ketiga | `app/llm/client.py` |
 | Output LLM harus sesuai format | Validasi Pydantic, satu kali coba ulang dengan pesan kesalahan | `app/llm/client.py`, `app/llm/schemas.py` |
 | Tidak ada skill tanpa bukti | Profil divalidasi sebelum masuk database | `app/db/profil.py` |
+| LLM tidak bisa mengarang bukti | Id bukti dicocokkan dengan profil; yang tidak ada ditolak dan diminta ulang | `app/workflows/penilaian.py` |
+| Tidak ada klaim tanpa bukti | Status terpenuhi atau sebagian tanpa id bukti diturunkan menjadi tidak | `app/workflows/penilaian.py` |
+| Skor tidak dikarang LLM | Skor dihitung kode dengan bobot tetap | `app/workflows/penilaian.py` |
+| Data pribadi tidak dikirim ke LLM | Nama, email, dan telepon tidak dimasukkan ke prompt | `app/workflows/penilaian.py` |
+| Instruksi tersembunyi di lowongan diabaikan | Teks lowongan dibungkus sebagai data; diuji di dataset evaluasi | `app/prompts/`, `eval/` |
 | Izin Google sesempit mungkin | Hanya kalender dan file buatan agent; jam sibuk tanpa isi event | `app/integrasi/google_api.py` |
 | Token Google tidak tersimpan polos | Dienkripsi dengan Fernet, kuncinya terpisah di `.env` | `app/integrasi/google_api.py` |
 
-Setiap aturan di atas diuji oleh unit test di `tests/`, yang berjalan tanpa internet.
+Aturan di atas diuji oleh unit test di `tests/`, yang berjalan tanpa internet. Pengecualiannya aturan instruksi
+tersembunyi: perilaku itu bergantung pada LLM, jadi diuji lewat dataset evaluasi di `eval/`.
 
 ## Teknologi
 
@@ -84,11 +100,14 @@ app/
   prompts/                    prompt per tugas, diberi versi
   integrasi/telegram_bot.py   bot yang hanya melayani pemilik
   integrasi/google_api.py     Gmail, Calendar, Drive, Sheets
-  tools/ workflows/ agent/    diisi mulai Tahap 1
+  workflows/penilaian.py      alur penilaian lowongan dan aturan skor
+  workflows/tracker.py        sinkronisasi tab Lamaran di Google Sheets
+  tools/ agent/               diisi di tahap berikutnya
 scripts/                      alat setup dan uji koneksi (dijalankan manual)
 tests/                        unit test tanpa internet
 data_dummy/                   profil dan lowongan contoh (fiktif)
-eval/datasets/                dataset evaluasi, diisi mulai Tahap 1
+eval/run_ekstraksi.py         evaluasi akurasi ekstraksi requirement
+eval/datasets/ekstraksi/      kasus uji: teks lowongan + jawaban yang diharapkan
 ```
 
 Folder `data/` (database dan profil asli) dan `secrets/` (file OAuth dan token) dibuat saat dijalankan dan
@@ -128,6 +147,9 @@ Untuk profil asli, salin `data_dummy/profil.json` ke `data/profil.json`, ganti i
 | Perintah | Kegunaan |
 | --- | --- |
 | `python -m app.main` | Menjalankan bot (biarkan terminal terbuka selama bot dipakai) |
+| Tempel teks lowongan ke bot | Menilai lowongan dan memperbarui tracker Sheets |
+| `/daftar` di bot | 10 lowongan terakhir beserta skornya |
+| `python -m eval.run_ekstraksi` | Mengukur akurasi ekstraksi requirement pada dataset evaluasi (memakai kuota asli) |
 | `python -m scripts.init_db` | Memvalidasi dan memuat ulang profil setelah diubah |
 | `python -m scripts.daftar_model` | Menampilkan model LLM yang tersedia untuk API key di `.env` |
 | `python -m scripts.uji_koneksi_llm` | Menguji setiap penyedia LLM (memakai kuota asli) |
@@ -141,6 +163,10 @@ Untuk profil asli, salin `data_dummy/profil.json` ke `data/profil.json`, ganti i
 - `ruff check .` dan `ruff format --check .` memeriksa kualitas dan format kode.
 - Skrip `uji_koneksi_*` menguji sambungan ke layanan sungguhan dan hanya perlu dijalankan saat setup atau saat
   ada yang berubah.
+- `python -m eval.run_ekstraksi` mengukur akurasi prompt ekstraksi pada kasus berlabel di
+  `eval/datasets/ekstraksi/`. Target Tahap 1: akurasi requirement minimal 85% dan nol requirement terlarang
+  (misalnya tenggat atau benefit yang ikut terbaca sebagai requirement). Satu kasus terdiri dari file `.txt`
+  berisi teks lowongan dan file `.json` berisi jawaban yang diharapkan; format lengkapnya ada di awal skrip.
 
 ## Keamanan dan privasi
 

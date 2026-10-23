@@ -1,0 +1,22 @@
+Junior Data Analyst
+PT Contoh Digital Indonesia (DUMMY)
+Lokasi: Bandung (hybrid)
+
+Tentang peran
+Kamu akan membantu tim bisnis membaca data penjualan dan perilaku pelanggan,
+menyiapkan dashboard, serta menyampaikan temuan kepada manajemen.
+
+Kualifikasi
+- Lulusan S1 Statistika, Matematika, Informatika, atau bidang terkait
+- Menguasai SQL (JOIN, agregasi, window function)
+- Terbiasa menggunakan Python, terutama Pandas, untuk mengolah data
+- Mampu membuat dashboard dengan Looker Studio, Tableau, atau Power BI
+- Pengalaman minimal 1 tahun di bidang analisis data (termasuk magang)
+- Mampu mempresentasikan temuan data kepada pihak non-teknis
+
+Nilai tambah
+- Memahami dasar machine learning
+- Pernah menggunakan BigQuery
+- Pengalaman dengan A/B testing
+
+Kirim lamaran paling lambat 30 November 2026.

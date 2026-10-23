@@ -9,6 +9,7 @@ Aturan akses (ditegakkan kode, bukan prompt):
 
 from __future__ import annotations
 
+import asyncio
 import logging
 from datetime import UTC, datetime
 
@@ -17,16 +18,21 @@ from telegram.ext import Application, CommandHandler, ContextTypes, MessageHandl
 
 from app.config import Config
 from app.db import repo
-from app.llm.client import LLMClient
+from app.llm.client import LLMClient, OutputTidakValid, SemuaPenyediaGagal
+from app.workflows.penilaian import ProfilKosong, format_pesan, nilai_lowongan
+from app.workflows.tracker import sinkron_tracker
 
 log = logging.getLogger(__name__)
 
 BANTUAN = (
-    "Perintah yang tersedia:\n"
+    "Cara pakai:\n"
+    "- Tempel teks lowongan lengkap ke chat ini. Bot akan menilai kecocokannya dengan profilmu.\n\n"
+    "Perintah:\n"
+    "/daftar - 10 lowongan terakhir yang dinilai\n"
     "/status - ringkasan profil dan pemakaian kuota LLM\n"
-    "/bantuan - daftar perintah\n\n"
-    "Fitur menilai lowongan, menyiapkan lamaran, dan lainnya ditambahkan mulai Tahap 1."
+    "/bantuan - daftar perintah"
 )
+PANJANG_MIN_LOWONGAN = 200  # pesan lebih pendek dari ini dianggap bukan teks lowongan
 
 
 def _cfg(context: ContextTypes.DEFAULT_TYPE) -> Config:
@@ -94,10 +100,57 @@ async def cmd_status(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None
     await update.effective_message.reply_text("\n".join(baris))
 
 
-async def balas_teks(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    await update.effective_message.reply_text(
-        "Pesan diterima. Di Tahap 0 bot baru mengenal perintah /status dan /bantuan."
-    )
+def _proses_lowongan(cfg: Config, teks: str) -> str:
+    """Dijalankan di thread terpisah karena memanggil LLM dan Google secara blocking."""
+    conn = repo.connect(cfg.db_path)
+    try:
+        repo.init_db(conn)
+        hasil = nilai_lowongan(LLMClient(cfg, conn), conn, teks, sumber="telegram")
+        catatan = None if hasil.duplikat else sinkron_tracker(cfg, conn)
+    finally:
+        conn.close()
+    pesan = format_pesan(hasil)
+    return f"{pesan}\n\n{catatan}" if catatan else pesan
+
+
+async def terima_teks(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    teks = update.effective_message.text or ""
+    if len(teks) < PANJANG_MIN_LOWONGAN:
+        await update.effective_message.reply_text(
+            "Untuk menilai lowongan, tempel teks lowongan lengkapnya (bukan hanya judul atau link).\n\n" + BANTUAN
+        )
+        return
+    await update.effective_message.reply_text("Menilai lowongan, biasanya 10 sampai 60 detik...")
+    # Satu penilaian dalam satu waktu, supaya batas request per menit tetap dipatuhi.
+    async with context.application.bot_data["kunci_proses"]:
+        try:
+            pesan = await asyncio.to_thread(_proses_lowongan, _cfg(context), teks)
+        except ProfilKosong as e:
+            pesan = str(e)
+        except SemuaPenyediaGagal as e:
+            pesan = f"Semua penyedia LLM sedang tidak bisa dipakai. Coba lagi nanti.\n\nDetail: {e}"
+        except OutputTidakValid:
+            log.exception("Output LLM tidak valid saat menilai lowongan")
+            pesan = "Lowongan ini tidak berhasil dibaca dengan benar. Coba kirim ulang, atau rapikan teksnya."
+    await update.effective_message.reply_text(pesan)
+
+
+async def cmd_daftar(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    cfg = _cfg(context)
+    conn = repo.connect(cfg.db_path)
+    try:
+        repo.init_db(conn)
+        daftar = repo.daftar_lamaran(conn, urut="terbaru", batas=10)
+    finally:
+        conn.close()
+    if not daftar:
+        await update.effective_message.reply_text("Belum ada lowongan yang dinilai. Tempel teks lowongan ke chat ini.")
+        return
+    baris = ["10 lowongan terakhir (skor · posisi · perusahaan · status):", ""]
+    for r in daftar:
+        perusahaan = r["perusahaan"] or "-"
+        baris.append(f"{round(r['skor_kecocokan'] or 0):>3} · {r['posisi']} · {perusahaan} · {r['status']}")
+    await update.effective_message.reply_text("\n".join(baris))
 
 
 async def abaikan_orang_lain(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -145,6 +198,7 @@ def buat_aplikasi(cfg: Config) -> Application:
         builder = builder.proxy(cfg.telegram_proxy).get_updates_proxy(cfg.telegram_proxy)
     app = builder.build()
     app.bot_data["cfg"] = cfg
+    app.bot_data["kunci_proses"] = asyncio.Lock()
     app.add_error_handler(tangani_error)
     # Grup -1 dijalankan sebelum handler lain dan tidak menghalanginya: hanya mencatat.
     app.add_handler(TypeHandler(Update, catat_masuk), group=-1)
@@ -161,6 +215,7 @@ def buat_aplikasi(cfg: Config) -> Application:
     app.add_handler(CommandHandler("start", cmd_start, filters=pemilik))
     app.add_handler(CommandHandler(["bantuan", "help"], cmd_bantuan, filters=pemilik))
     app.add_handler(CommandHandler("status", cmd_status, filters=pemilik))
+    app.add_handler(CommandHandler("daftar", cmd_daftar, filters=pemilik))
     app.add_handler(CommandHandler("whoami", cmd_whoami, filters=pemilik))
-    app.add_handler(MessageHandler(pemilik & filters.TEXT & ~filters.COMMAND, balas_teks))
+    app.add_handler(MessageHandler(pemilik & filters.TEXT & ~filters.COMMAND, terima_teks))
     return app

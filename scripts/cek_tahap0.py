@@ -13,6 +13,7 @@ Gerbang Tahap 0:
 from __future__ import annotations
 
 import argparse
+import json
 import sqlite3
 import sys
 
@@ -99,17 +100,12 @@ def cek_telegram(cfg: Config, conn: sqlite3.Connection) -> None:
 def cek_llm(cfg: Config, conn: sqlite3.Connection) -> None:
     for p in cfg.penyedia:
         client = LLMClient(cfg, conn, hanya=[p.nama])
-        pesan = [
-            {
-                "role": "user",
-                "content": (
-                    "Balas HANYA dengan JSON: "
-                    '{"posisi": "Data Analyst", "perusahaan": null, "requirement": '
-                    '[{"teks_asli": "Menguasai SQL", "kategori": "wajib", '
-                    '"skill_normal": "sql", "tahun_pengalaman": null}]}'
-                ),
-            }
-        ]
+        contoh = {
+            "posisi": "Data Analyst",
+            "perusahaan": None,
+            "requirement": [{"teks_asli": "Menguasai SQL", "kategori": "wajib", "jenis": "skill", "skill": ["sql"]}],
+        }
+        pesan = [{"role": "user", "content": f"Balas HANYA dengan JSON ini apa adanya: {json.dumps(contoh)}"}]
         try:
             client.panggil_json("cek_tahap0", pesan, HasilEkstraksi, versi_prompt="cek_tahap0")
             catat("OK", f"LLM {p.nama} mengembalikan JSON valid", p.model)

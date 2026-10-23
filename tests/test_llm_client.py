@@ -6,10 +6,11 @@ from app.config import Config, PenyediaLLM, muat_config
 from app.db import repo
 from app.llm import client as llm
 from app.llm.schemas import HasilEkstraksi
+from app.workflows.penilaian import PROMPT_EKSTRAKSI
 
 JSON_BAIK = (
     '{"posisi": "Data Analyst", "perusahaan": null, "requirement": '
-    '[{"teks_asli": "Menguasai SQL", "kategori": "wajib", "skill_normal": "sql", "tahun_pengalaman": null}]}'
+    '[{"teks_asli": "Menguasai SQL", "kategori": "wajib", "jenis": "skill", "skill": ["sql"]}]}'
 )
 
 
@@ -63,7 +64,7 @@ def test_pindah_ke_cadangan_saat_utama_gagal(monkeypatch, cfg, conn):
 
     monkeypatch.setattr(llm.litellm, "completion", palsu)
     hasil = llm.LLMClient(cfg, conn).panggil_json("t", [{"role": "user", "content": "x"}], HasilEkstraksi)
-    assert hasil.requirement[0].skill_normal == "sql"
+    assert hasil.requirement[0].skill == ["sql"]
     assert repo.hitung_request_24jam(conn, "utama") == 1  # kegagalan tetap dihitung
     assert repo.hitung_request_24jam(conn, "cadangan") == 1
 
@@ -100,8 +101,8 @@ def test_semua_kuota_habis(monkeypatch, cfg, conn):
 
 
 def test_prompt_dimuat_dengan_isian():
-    teks = llm.muat_prompt("ekstrak_requirement_v1.md", lowongan="LOWONGAN UJI")
-    assert "LOWONGAN UJI" in teks and "{{LOWONGAN}}" not in teks
+    teks = llm.muat_prompt(f"{PROMPT_EKSTRAKSI}.md", lowongan="LOWONGAN UJI", hari_ini="2026-10-15")
+    assert "LOWONGAN UJI" in teks and "2026-10-15" in teks and "{{" not in teks
 
 
 def test_penyedia_tanpa_api_key_dilewati_tanpa_memakai_kuota(monkeypatch, cfg, conn):
@@ -135,3 +136,16 @@ def test_ringkas_error_menyatukan_json_dan_membuang_traceback():
 )
 def test_temperature_hanya_untuk_model_yang_mendukung(model, harapan):
     assert llm.dukung_temperature(model) is harapan
+
+
+def test_validasi_isi_memicu_coba_ulang(monkeypatch, cfg, conn):
+    jawaban = iter([JSON_BAIK.replace('"sql"', '"cobol"'), JSON_BAIK])
+    monkeypatch.setattr(llm.litellm, "completion", lambda **kw: Jawaban(next(jawaban)))
+
+    def hanya_sql(h):
+        return [] if h.requirement[0].skill == ["sql"] else ["skill harus sql"]
+
+    hasil = llm.LLMClient(cfg, conn).panggil_json(
+        "t", [{"role": "user", "content": "x"}], HasilEkstraksi, validasi=hanya_sql
+    )
+    assert hasil.requirement[0].skill == ["sql"]

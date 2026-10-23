@@ -245,3 +245,12 @@ class Google:
             insertDataOption="INSERT_ROWS",
             body={"values": [[waktu, kejadian]]},
         ).execute()
+
+    def tulis_tracker(self, sheet_id: str, baris: list[list]) -> None:
+        """Tulis ulang isi tab Lamaran (di bawah baris judul) dengan baris yang diberikan."""
+        nilai = self.sheets.spreadsheets().values()
+        nilai.clear(spreadsheetId=sheet_id, range="Lamaran!A2:H").execute()
+        if baris:
+            nilai.update(
+                spreadsheetId=sheet_id, range="Lamaran!A2", valueInputOption="RAW", body={"values": baris}
+            ).execute()

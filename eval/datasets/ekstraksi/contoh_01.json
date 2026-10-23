@@ -1,0 +1,15 @@
+{
+  "_catatan": "Contoh fiktif. Menguji: daftar 'atau' tetap satu requirement, tenggat dan deskripsi peran bukan requirement.",
+  "requirement": [
+    {"kategori": "wajib", "kunci": ["s1"]},
+    {"kategori": "wajib", "skill": ["sql"]},
+    {"kategori": "wajib", "kunci": ["python"]},
+    {"kategori": "wajib", "skill": ["looker studio", "tableau", "power bi"]},
+    {"kategori": "wajib", "kunci": ["1 tahun"]},
+    {"kategori": "wajib", "kunci": ["presentasi", "mempresentasikan"]},
+    {"kategori": "tambahan", "kunci": ["machine learning"]},
+    {"kategori": "tambahan", "skill": ["bigquery"]},
+    {"kategori": "tambahan", "kunci": ["a/b", "ab testing"]}
+  ],
+  "dilarang": ["30 november", "paling lambat", "kirim lamaran", "membantu tim bisnis"]
+}

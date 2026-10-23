@@ -51,7 +51,8 @@ def test_pemilik_dilayani():
     app = _app(PEMILIK)
     assert _handler_terpilih(app, _update(app, PEMILIK, "/status")) is tb.cmd_status
     assert _handler_terpilih(app, _update(app, PEMILIK, "/start")) is tb.cmd_start
-    assert _handler_terpilih(app, _update(app, PEMILIK, "halo")) is tb.balas_teks
+    assert _handler_terpilih(app, _update(app, PEMILIK, "halo")) is tb.terima_teks
+    assert _handler_terpilih(app, _update(app, PEMILIK, "/daftar")) is tb.cmd_daftar
 
 
 def test_mode_setup_hanya_whoami():

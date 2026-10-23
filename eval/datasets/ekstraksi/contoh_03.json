@@ -1,0 +1,12 @@
+{
+  "_catatan": "Contoh fiktif. Menguji: 'diutamakan' menjadi tambahan, fasilitas dan cara melamar bukan requirement.",
+  "requirement": [
+    {"kategori": "wajib", "kunci": ["d3"]},
+    {"kategori": "wajib", "skill": ["excel|microsoft excel"]},
+    {"kategori": "wajib", "kunci": ["teliti"]},
+    {"kategori": "wajib", "kunci": ["ditempatkan"]},
+    {"kategori": "tambahan", "kunci": ["administrasi"]},
+    {"kategori": "tambahan", "skill": ["google sheets"]}
+  ],
+  "dilarang": ["bpjs", "kirim cv", "menginput", "15 desember"]
+}
