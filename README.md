@@ -167,6 +167,8 @@ Untuk profil asli, salin `data_dummy/profil.json` ke `data/profil.json`, ganti i
   `eval/datasets/ekstraksi/`. Target Tahap 1: akurasi requirement minimal 85% dan nol requirement terlarang
   (misalnya tenggat atau benefit yang ikut terbaca sebagai requirement). Satu kasus terdiri dari file `.txt`
   berisi teks lowongan dan file `.json` berisi jawaban yang diharapkan; format lengkapnya ada di awal skrip.
+  Opsi `--prompt` menjalankan versi prompt lain untuk membandingkan hasil, dan `--kasus` memilih kasus berdasarkan
+  awalan nama. Kasus dari lowongan asli (`asli_*`) disimpan lokal dan tidak masuk repo.
 
 ## Keamanan dan privasi
 

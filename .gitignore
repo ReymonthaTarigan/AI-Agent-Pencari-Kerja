@@ -24,6 +24,8 @@ dist/
 
 # ===== Hasil evaluasi (bisa memuat teks lowongan) =====
 eval/hasil/
+# Kasus uji dari lowongan asli: menunjukkan lowongan yang dilamar, jadi tidak dipublikasikan
+eval/datasets/ekstraksi/asli_*
 
 # ===== Database dan log =====
 *.db

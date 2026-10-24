@@ -3,6 +3,8 @@
     python -m eval.run_ekstraksi                     # semua kasus, penyedia sesuai urutan di .env
     python -m eval.run_ekstraksi --penyedia cadangan # hanya satu penyedia
     python -m eval.run_ekstraksi --ulang 2           # tiap kasus dijalankan 2 kali untuk melihat konsistensi
+    python -m eval.run_ekstraksi --prompt ekstrak_requirement_v3  # versi prompt lain, untuk membandingkan
+    python -m eval.run_ekstraksi --kasus asli        # hanya kasus yang namanya diawali "asli"
 
 Setiap kasus terdiri dari dua file bernama sama di eval/datasets/ekstraksi/:
 - <nama>.txt  : teks lowongan apa adanya
@@ -88,9 +90,11 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--penyedia", help="utama, cadangan, atau lokal")
     parser.add_argument("--ulang", type=int, default=1)
+    parser.add_argument("--prompt", default=PROMPT_EKSTRAKSI, help="nama file prompt tanpa .md")
+    parser.add_argument("--kasus", default="", help="awalan nama kasus, misalnya asli atau contoh")
     args = parser.parse_args()
 
-    kasus = sorted(DATASET.glob("*.json"))
+    kasus = sorted(DATASET.glob(f"{args.kasus}*.json"))
     if not kasus:
         print(f"Tidak ada kasus di {DATASET}")
         return 1
@@ -101,23 +105,28 @@ def main() -> int:
     hari_ini = date.today()
 
     laporan, total_harapan, total_benar, total_dilarang, gagal = [], 0, 0, 0, 0
-    print(f"Prompt: {PROMPT_EKSTRAKSI} | {len(kasus)} kasus x {args.ulang} pengulangan\n")
+    per_kelompok: dict[str, list[int]] = {}  # awalan nama kasus (asli, contoh) -> [benar, harapan]
+    print(f"Prompt: {args.prompt} | {len(kasus)} kasus x {args.ulang} pengulangan\n")
     for file_json in kasus:
         harapan = json.loads(file_json.read_text(encoding="utf-8"))
         teks = file_json.with_suffix(".txt").read_text(encoding="utf-8")
         for ulang in range(1, args.ulang + 1):
             label = f"{file_json.stem}#{ulang}" if args.ulang > 1 else file_json.stem
             try:
-                hasil = ekstrak(client, teks, hari_ini)
+                hasil = ekstrak(client, teks, hari_ini, versi_prompt=args.prompt)
             except (SemuaPenyediaGagal, OutputTidakValid) as e:
                 gagal += 1
                 total_harapan += len(harapan["requirement"])
+                per_kelompok.setdefault(file_json.stem.split("_")[0], [0, 0])[1] += len(harapan["requirement"])
                 print(f"[GAGAL] {label}: {e}")
                 laporan.append({"kasus": label, "gagal": str(e)})
                 continue
             n = nilai_kasus(harapan, hasil)
             total_harapan += n["harapan"]
             total_benar += n["benar"]
+            kelompok = per_kelompok.setdefault(file_json.stem.split("_")[0], [0, 0])
+            kelompok[0] += n["benar"]
+            kelompok[1] += n["harapan"]
             total_dilarang += len(n["dilarang"])
             tanda = "OK" if n["benar"] == n["harapan"] and not n["dilarang"] else "CEK"
             print(
@@ -137,13 +146,20 @@ def main() -> int:
     akurasi = total_benar / total_harapan if total_harapan else 0.0
     lolos = akurasi >= TARGET_AKURASI and total_dilarang == 0 and not gagal
     print(f"\nAkurasi requirement: {total_benar}/{total_harapan} = {akurasi:.0%} (target {TARGET_AKURASI:.0%})")
+    if len(per_kelompok) > 1:
+        for nama, (benar, harapan) in sorted(per_kelompok.items()):
+            print(f"  kasus {nama}: {benar}/{harapan} = {benar / harapan:.0%}")
     print(f"Requirement terlarang yang muncul: {total_dilarang} (target 0) | Kasus gagal: {gagal}")
     print("LOLOS" if lolos else "BELUM LOLOS")
 
     FOLDER_HASIL.mkdir(parents=True, exist_ok=True)
     nama = FOLDER_HASIL / f"ekstraksi_{datetime.now():%Y%m%d_%H%M%S}.json"
     nama.write_text(
-        json.dumps({"prompt": PROMPT_EKSTRAKSI, "akurasi": akurasi, "kasus": laporan}, ensure_ascii=False, indent=2),
+        json.dumps(
+            {"prompt": args.prompt, "akurasi": akurasi, "per_kelompok": per_kelompok, "kasus": laporan},
+            ensure_ascii=False,
+            indent=2,
+        ),
         encoding="utf-8",
     )
     print(f"Detail: {nama.relative_to(ROOT)}")

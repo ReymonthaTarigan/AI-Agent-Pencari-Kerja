@@ -22,7 +22,7 @@ from app.db import repo
 from app.llm.client import LLMClient, muat_prompt
 from app.llm.schemas import HasilEkstraksi, HasilPencocokan, PenilaianRequirement, Requirement
 
-PROMPT_EKSTRAKSI = "ekstrak_requirement_v3"
+PROMPT_EKSTRAKSI = "ekstrak_requirement_v5"
 PROMPT_PENCOCOKAN = "cocokkan_profil_v1"
 
 # Aturan skor. Ditulis di kode supaya bisa diperiksa, diuji, dan tidak berubah-ubah.
@@ -130,10 +130,11 @@ def tegakkan_bukti(penilaian: list[PenilaianRequirement]) -> list[PenilaianRequi
 # ===== Langkah yang memakai LLM =====
 
 
-def ekstrak(client: LLMClient, teks: str, hari_ini: date) -> HasilEkstraksi:
-    prompt = muat_prompt(f"{PROMPT_EKSTRAKSI}.md", lowongan=teks[:PANJANG_MAKS_TEKS], hari_ini=hari_ini.isoformat())
+def ekstrak(client: LLMClient, teks: str, hari_ini: date, versi_prompt: str = PROMPT_EKSTRAKSI) -> HasilEkstraksi:
+    """Ekstrak requirement dengan prompt aktif. versi_prompt lain hanya dipakai evaluasi untuk membandingkan versi."""
+    prompt = muat_prompt(f"{versi_prompt}.md", lowongan=teks[:PANJANG_MAKS_TEKS], hari_ini=hari_ini.isoformat())
     return client.panggil_json(
-        "ekstrak_requirement", [{"role": "user", "content": prompt}], HasilEkstraksi, versi_prompt=PROMPT_EKSTRAKSI
+        "ekstrak_requirement", [{"role": "user", "content": prompt}], HasilEkstraksi, versi_prompt=versi_prompt
     )
 
 
